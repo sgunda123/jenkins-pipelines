@@ -1,0 +1,60 @@
+/*
+pipeline: Defines a block that contains all the stages of the pipeline.
+agent any: Specifies that this pipeline can run on any available agent.
+stages: Contains all the stages of the pipeline.
+stage: Defines a stage in the pipeline. Each stage represents a part of the build process (e.g., Build, Test, Deploy).
+parallel: Allows running multiple stages in parallel, which can speed up the execution of the pipeline.
+steps: Contains the steps to be executed in a stage. These are the actual commands or scripts that Jenkins will execute.
+sh: Executes a shell command.
+archiveArtifacts: Archives the specified files as artifacts.
+junit: Processes XML JUnit test reports and integrates the results into Jenkins.
+ */
+
+pipeline { 
+    agent any 
+
+    stages {
+        stage('Fluffy Build') { 
+            steps {
+                sh './jenkins/build.sh'
+                archiveArtifacts 'target/*.jar'
+            }
+        }
+
+        stage('Fluffy Test') { 
+            parallel {
+                stage('Backend') { 
+                    steps {
+                        sh './jenkins/test-backend.sh'
+                        junit 'target/surefire-reports/**/TEST*.xml'
+                    }
+                }
+
+                stage('Frontend') { 
+                    steps {
+                        sh './jenkins/test-frontend.sh'
+                        junit 'target/test-results/**/TEST*.xml'
+                    }
+                }
+
+                stage('Performance') { 
+                    steps {
+                        sh './jenkins/test-performance.sh'
+                    }
+                }
+
+                stage('Static') { 
+                    steps {
+                        sh './jenkins/test-static.sh'
+                    }
+                }
+            }
+        }
+
+        stage('Fluffy Deploy') { 
+            steps {
+                sh './jenkins/deploy.sh staging'
+            }
+        }
+    }
+}
